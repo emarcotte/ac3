@@ -1,8 +1,6 @@
 mod solver;
 mod tile_matcher;
 
-use std::collections::VecDeque;
-
 use solver::Solver;
 use tile_matcher::TileMatchBuilder;
 
@@ -64,15 +62,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // a,b,c
     // d,e,f
     // g,h,i
-    let a_id = solver.add_variable('a');
-    let b_id = solver.add_variable('b');
-    let c_id = solver.add_variable('c');
-    let d_id = solver.add_variable('d');
-    let e_id = solver.add_variable('e');
-    let f_id = solver.add_variable('f');
-    let g_id = solver.add_variable('g');
-    let h_id = solver.add_variable('h');
-    let i_id = solver.add_variable('i');
+    solver.add_variable('a');
+    solver.add_variable('b');
+    solver.add_variable('c');
+    solver.add_variable('d');
+    solver.add_variable('e');
+    solver.add_variable('f');
+    solver.add_variable('g');
+    solver.add_variable('h');
+    solver.add_variable('i');
 
     // add constraints
     solver.add_binary_constraint('a', 'b', rules.right())?;
@@ -108,50 +106,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     solver.add_binary_constraint('i', 'f', rules.up())?;
     solver.add_binary_constraint('i', 'h', rules.left())?;
 
-    println!("Constrainted");
-
-    // TODO: Can these be discovered from constraints?
-    let mut arcs = VecDeque::new();
-    arcs.push_back((a_id, b_id));
-    arcs.push_back((a_id, d_id));
-
-    arcs.push_back((b_id, a_id));
-    arcs.push_back((b_id, c_id));
-    arcs.push_back((b_id, e_id));
-
-    arcs.push_back((c_id, b_id));
-    arcs.push_back((c_id, f_id));
-
-    arcs.push_back((d_id, a_id));
-    arcs.push_back((d_id, e_id));
-    arcs.push_back((d_id, g_id));
-
-    arcs.push_back((e_id, b_id));
-    arcs.push_back((e_id, d_id));
-    arcs.push_back((e_id, f_id));
-    arcs.push_back((e_id, h_id));
-
-    arcs.push_back((f_id, c_id));
-    arcs.push_back((f_id, e_id));
-    arcs.push_back((f_id, i_id));
-
-    arcs.push_back((g_id, d_id));
-    arcs.push_back((g_id, h_id));
-
-    arcs.push_back((h_id, e_id));
-    arcs.push_back((h_id, g_id));
-    arcs.push_back((h_id, i_id));
-
-    arcs.push_back((i_id, f_id));
-    arcs.push_back((i_id, h_id));
-
     println!("Initial state:");
     println!("{}", solver);
 
     let mut rng = simple_rng("hello world bilbo");
 
     loop {
-        if solver.solve(&arcs) {
+        if solver.solve() {
             println!("Done, but still have options!");
             println!("{}", solver);
             if ! select_random_variable_domain_value(&mut rng, &mut solver) {

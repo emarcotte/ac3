@@ -45,10 +45,9 @@ where
     }
 
     // TODO: Stop returning indexes.
-    pub fn add_variable(&mut self, v: V) -> usize {
+    pub fn add_variable(&mut self, v: V) {
         self.variables.push(v);
         self.domains.push(self.domain_values.clone());
-        self.variables.len() - 1
     }
 
     pub fn add_binary_constraint(
@@ -73,8 +72,14 @@ where
         Ok(())
     }
 
-    // TODO: look up arcs from constraints.
-    pub fn solve(&mut self, arcs: &VecDeque<(usize, usize)>) -> bool {
+    pub fn solve(&mut self) -> bool {
+        let mut arcs = VecDeque::new();
+
+        // WARNING/TODO: Is it correct to derive arcs from constraints?
+        for constraint in &self.constraints {
+            let Constraint::Binary { scope, rule: _ } = constraint;
+            arcs.push_back(*scope);
+        }
         let mut arc_queue = arcs.clone();
 
         loop {
