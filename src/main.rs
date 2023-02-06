@@ -6,6 +6,10 @@ use std::collections::VecDeque;
 use solver::Solver;
 use tile_matcher::TileMatchBuilder;
 
+use rand_seeder::Seeder;
+use rand::prelude::SmallRng;
+use rand::Rng;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rules = TileMatchBuilder::new()
         // 0
@@ -144,15 +148,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Initial state:");
     println!("{}", solver);
 
+    let mut rng = simple_rng("hello world bilbo");
+
     loop {
         if solver.solve(&arcs) {
             println!("Done, but still have options!");
+            println!("{}", solver);
+            if ! select_random_variable_domain_value(&mut rng, &mut solver) {
+                println!("No more unresolved variables");
+                break;
+            }
         }
         else {
             println!("No options left");
-        }
-
-        if ! select_random_variable_domain_value(&mut solver) {
             break;
         }
     }
@@ -161,15 +169,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn select_random_variable_domain_value(solver: &mut Solver<char, i32>) -> bool {
+fn simple_rng(seed_str: &str) -> SmallRng {
+    Seeder::from(seed_str).make_rng()
+}
+
+fn select_random_variable_domain_value(r: &mut SmallRng, solver: &mut Solver<char, i32>) -> bool {
     let remaining = solver.unresolved_variables().collect::<Vec<_>>();
     if remaining.len() > 0 {
-        let (v, domain) = remaining[0].clone();
+        let (v, domain) = remaining[r.gen_range(0..remaining.len())].clone();
         let v = *v;
         let domain = domain.clone();
         drop(remaining);
-        println!("Reducing domain of {v} to {:}", domain[0]);
-        solver.set_domain(v, domain[0]);
+        let selected = domain[r.gen_range(0..domain.len())];
+        println!("Reducing domain of {v} to {selected} from {domain:?}");
+        solver.set_domain(v, selected);
         true
     }
     else {

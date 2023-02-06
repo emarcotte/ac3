@@ -86,7 +86,7 @@ where
                         return false;
                     }
 
-                    // TODO enqueue any neighbors that need to propagate the revision.
+                    arc_queue.extend(arcs.iter().filter(|(_, to)| *to == next.0))
                 }
             }
             else {
