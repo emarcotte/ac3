@@ -58,53 +58,37 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         vec!(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
     );
 
-    // pretend:
-    // a,b,c
-    // d,e,f
-    // g,h,i
-    solver.add_variable('a');
-    solver.add_variable('b');
-    solver.add_variable('c');
-    solver.add_variable('d');
-    solver.add_variable('e');
-    solver.add_variable('f');
-    solver.add_variable('g');
-    solver.add_variable('h');
-    solver.add_variable('i');
+    let width = 10u32;
+    let height = 10u32;
 
-    // add constraints
-    solver.add_binary_constraint('a', 'b', rules.right())?;
-    solver.add_binary_constraint('a', 'd', rules.down())?;
+    for x in 0..width {
+        for y in 0..height {
+            solver.add_variable(x + y * width);
+        }
+    }
 
-    solver.add_binary_constraint('b', 'a', rules.left())?;
-    solver.add_binary_constraint('b', 'c', rules.right())?;
-    solver.add_binary_constraint('b', 'e', rules.down())?;
+    for x in 0..width {
+        for y in 0..height {
+            let index = x + y * width;
+            if x > 0 {
+                println!("l");
+                solver.add_binary_constraint(index, index - 1, rules.left())?;
+            }
+            if x < width - 1 {
+                println!("r");
+                solver.add_binary_constraint(index, index + 1, rules.right())?;
+            }
+            if y > 0 {
+                println!("d");
+                solver.add_binary_constraint(index, index - width, rules.down())?;
+            }
+            if y < height - 1{
+                println!("u");
+                solver.add_binary_constraint(index, index + width, rules.up())?;
+            }
 
-    solver.add_binary_constraint('c', 'b', rules.left())?;
-    solver.add_binary_constraint('c', 'f', rules.down())?;
-
-    solver.add_binary_constraint('d', 'a', rules.up())?;
-    solver.add_binary_constraint('d', 'e', rules.right())?;
-    solver.add_binary_constraint('d', 'g', rules.down())?;
-
-    solver.add_binary_constraint('e', 'b', rules.up())?;
-    solver.add_binary_constraint('e', 'd', rules.left())?;
-    solver.add_binary_constraint('e', 'f', rules.right())?;
-    solver.add_binary_constraint('e', 'h', rules.down())?;
-
-    solver.add_binary_constraint('f', 'c', rules.up())?;
-    solver.add_binary_constraint('f', 'e', rules.left())?;
-    solver.add_binary_constraint('f', 'i', rules.down())?;
-
-    solver.add_binary_constraint('g', 'd', rules.up())?;
-    solver.add_binary_constraint('g', 'h', rules.right())?;
-
-    solver.add_binary_constraint('h', 'e', rules.up())?;
-    solver.add_binary_constraint('h', 'g', rules.left())?;
-    solver.add_binary_constraint('h', 'i', rules.right())?;
-
-    solver.add_binary_constraint('i', 'f', rules.up())?;
-    solver.add_binary_constraint('i', 'h', rules.left())?;
+        }
+    }
 
     println!("Initial state:");
     println!("{}", solver);
@@ -134,7 +118,7 @@ fn simple_rng(seed_str: &str) -> SmallRng {
     Seeder::from(seed_str).make_rng()
 }
 
-fn select_random_variable_domain_value(r: &mut SmallRng, solver: &mut Solver<char, i32>) -> bool {
+fn select_random_variable_domain_value(r: &mut SmallRng, solver: &mut Solver<u32, i32>) -> bool {
     let remaining = solver.unresolved_variables().collect::<Vec<_>>();
     if remaining.len() > 0 {
         let (v, domain) = remaining[r.gen_range(0..remaining.len())].clone();
