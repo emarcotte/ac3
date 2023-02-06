@@ -1,4 +1,5 @@
-use std::{collections::VecDeque, fmt::Display};
+use std::collections::VecDeque;
+use std::fmt::Display;
 use std::sync::Arc;
 
 pub type ClonableBinaryConstraintFunction<D> = Arc<dyn Send + Sync + Fn(D, D) -> bool + 'static>;
@@ -32,7 +33,7 @@ where
 impl <V, D> Solver<V, D>
 where
     V: Display + Copy + Clone + PartialEq,
-    D: Clone + Copy + std::fmt::Debug,
+    D: PartialEq + Clone + Copy + std::fmt::Debug,
 {
     pub fn new(values: Vec<D>) -> Self {
         Self {
@@ -73,7 +74,7 @@ where
     }
 
     // TODO: look up arcs from constraints.
-    pub fn solve(&mut self, arcs: VecDeque<(usize, usize)>) -> bool {
+    pub fn solve(&mut self, arcs: &VecDeque<(usize, usize)>) -> bool {
         let mut arc_queue = arcs.clone();
 
         loop {
@@ -92,7 +93,9 @@ where
                 break;
             }
         }
-        false
+
+        // TODO: This is insufficient.
+        self.domains.iter().next().unwrap().len() != 0
     }
 
     fn revise(&mut self, (from, to): (usize, usize)) -> bool {
@@ -128,5 +131,35 @@ where
         self.domains[from] = new_domain;
 
         revised
+    }
+
+    pub fn set_domain(&mut self, v: V, d: D) {
+        if let Some(index) = self.variables.iter().position(|stored| *stored == v) {
+            if self.domains[index].contains(&d) {
+                self.domains[index] = vec!(d);
+            }
+        }
+    }
+
+    pub fn unresolved_variables(&self) -> impl Iterator<Item = (&V, &Vec<D>)> {
+        self.variables.iter()
+            .zip(&self.domains)
+            .filter_map(|(var, domain)| {
+                (domain.len() > 1).then_some((var, domain))
+            })
+    }
+}
+
+impl <V, D> Display for Solver<V, D>
+where
+    V: Display + Copy + Clone + PartialEq,
+    D: Clone + Copy + std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Variables:")?;
+        for var in self.variables.iter().enumerate() {
+            writeln!(f, "  {}: {} => {:?}", var.0, var.1, self.domains[var.0])?;
+        }
+        Ok(())
     }
 }
