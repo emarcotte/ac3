@@ -177,12 +177,9 @@ fn select_random_variable_domain_value(r: &mut SmallRng, solver: &mut Solver<cha
     let remaining = solver.unresolved_variables().collect::<Vec<_>>();
     if remaining.len() > 0 {
         let (v, domain) = remaining[r.gen_range(0..remaining.len())].clone();
-        let v = *v;
-        let domain = domain.clone();
-        drop(remaining);
         let selected = domain[r.gen_range(0..domain.len())];
         println!("Reducing domain of {v} to {selected} from {domain:?}");
-        solver.set_domain(v, selected);
+        solver.set_domain(*v, selected);
         true
     }
     else {
