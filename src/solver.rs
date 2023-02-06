@@ -106,6 +106,7 @@ where
     fn revise(&mut self, (from, to): (usize, usize)) -> bool {
         let mut revised = false;
 
+        // TODO: Can we kill this vec build?
         let new_domain = self.domains[from]
             .iter()
             .copied()
@@ -131,7 +132,7 @@ where
             .collect();
 
         if revised {
-            println!("Domain of {from} reduced from {:?} to {:?}", self.domains[from], new_domain);
+            // println!("Domain of {from} reduced from {:?} to {:?}", self.domains[from], new_domain);
         }
         self.domains[from] = new_domain;
 

@@ -71,34 +71,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         for y in 0..height {
             let index = x + y * width;
             if x > 0 {
-                println!("l");
                 solver.add_binary_constraint(index, index - 1, rules.left())?;
             }
             if x < width - 1 {
-                println!("r");
                 solver.add_binary_constraint(index, index + 1, rules.right())?;
             }
             if y > 0 {
-                println!("d");
                 solver.add_binary_constraint(index, index - width, rules.down())?;
             }
             if y < height - 1{
-                println!("u");
                 solver.add_binary_constraint(index, index + width, rules.up())?;
             }
 
         }
     }
 
-    println!("Initial state:");
-    println!("{}", solver);
-
     let mut rng = simple_rng("hello world bilbo");
 
     loop {
         if solver.solve() {
-            println!("Done, but still have options!");
-            println!("{}", solver);
             if ! select_random_variable_domain_value(&mut rng, &mut solver) {
                 println!("No more unresolved variables");
                 break;
@@ -123,7 +114,6 @@ fn select_random_variable_domain_value(r: &mut SmallRng, solver: &mut Solver<u32
     if remaining.len() > 0 {
         let (v, domain) = remaining[r.gen_range(0..remaining.len())].clone();
         let selected = domain[r.gen_range(0..domain.len())];
-        println!("Reducing domain of {v} to {selected} from {domain:?}");
         solver.set_domain(*v, selected);
         true
     }
