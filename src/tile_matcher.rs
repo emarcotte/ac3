@@ -1,12 +1,13 @@
+/*
 use std::collections::HashSet;
 use std::sync::Arc;
-use crate::solver::ClonableBinaryConstraintFunction;
+
+type ClonableBinaryConstraintFunction<D> = Arc<dyn Send + Sync + Fn(D, D) -> bool + 'static>;
 
 type TupleMatcher = ClonableBinaryConstraintFunction<i32>;
 
-pub fn tuple_matchers(a: i32, b: i32) -> TupleMatcher
-{
-    Arc::new(move |av: i32, bv: i32|  av == a && bv == b)
+pub fn tuple_matchers(a: i32, b: i32) -> TupleMatcher {
+    Arc::new(move |av: i32, bv: i32| av == a && bv == b)
 }
 
 pub struct TileMatchBuilder {
@@ -37,8 +38,7 @@ impl TileMatchBuilder {
     }
 }
 
-pub struct TileMatchSet
-{
+pub struct TileMatchSet {
     up: Vec<TupleMatcher>,
     down: Vec<TupleMatcher>,
     right: Vec<TupleMatcher>,
@@ -47,20 +47,28 @@ pub struct TileMatchSet
 
 impl Into<TileMatchSet> for TileMatchBuilder {
     fn into(self) -> TileMatchSet {
-        let up = self.up_down.iter()
+        let up = self
+            .up_down
+            .iter()
             .map(|(u, d)| tuple_matchers(*u, *d))
             .collect();
 
-        let down = self.up_down.iter()
+        let down = self
+            .up_down
+            .iter()
             .map(|(u, d)| tuple_matchers(*d, *u))
             .collect();
 
-        let left = self.left_right.iter()
+        let left = self
+            .left_right
+            .iter()
             .map(|(l, r)| tuple_matchers(*l, *r))
             .collect();
 
-        let right = self.left_right.iter()
-            .map (|(l, r)| tuple_matchers(*r, *l))
+        let right = self
+            .left_right
+            .iter()
+            .map(|(l, r)| tuple_matchers(*r, *l))
             .collect();
 
         TileMatchSet {
@@ -89,3 +97,4 @@ impl TileMatchSet {
         &self.down
     }
 }
+ */
