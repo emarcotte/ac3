@@ -1,5 +1,6 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 
+use csp::Constraint;
 use rand::prelude::SmallRng;
 use rand::seq::SliceRandom;
 use rand_seeder::Seeder;
@@ -12,13 +13,13 @@ fn main() {
     domains.insert('B', vec![1, 2, 3]);
     domains.insert('C', vec![1, 2, 3]);
 
-    let mut constraints = HashMap::<(char, char), fn(u32, u32) -> bool>::new();
-    constraints.insert(('A', 'B'), |a, b| a > b);
-    constraints.insert(('B', 'A'), |b, a| b < a);
-    constraints.insert(('B', 'C'), |b, c| b == c);
-    constraints.insert(('C', 'B'), |c, b| c == b);
+    let mut constraints = HashMap::<(char, char), Constraint<u32>>::new();
+    constraints.insert(('A', 'B'), Box::new(|a, b| a > b));
+    constraints.insert(('B', 'A'), Box::new(|b, a| b < a));
+    constraints.insert(('B', 'C'), Box::new(|b, c| b == c));
+    constraints.insert(('C', 'B'), Box::new(|c, b| c == b));
 
-    let arcs = VecDeque::from([('A', 'B'), ('B', 'A'), ('B', 'C'), ('C', 'B')]);
+    let arcs = vec![('A', 'B'), ('B', 'A'), ('B', 'C'), ('C', 'B')];
 
     loop {
         csp::ac3(&mut domains, &arcs, &constraints);
