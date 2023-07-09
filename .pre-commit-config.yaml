@@ -1,0 +1,27 @@
+repos:
+- repo: https://github.com/doublify/pre-commit-rust
+  rev: v1.0
+  hooks:
+    # Checks rust formatting
+    - id: fmt
+      require_serial: true
+
+    # Make sure code passes `cargo clippy`
+    - id: clippy
+
+- repo: https://github.com/commitizen-tools/commitizen
+  rev: 3.2.2
+  hooks:
+    # Make sure commit messages look sane.
+    - id: commitizen
+      stages: [commit-msg]
+
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+  hooks:
+    # Dont commit to main!
+    - id: no-commit-to-branch
+      args: ['--branch', 'main']
+    # Branch names need to be fix/simple-names or feat/simple-names
+    # - id: no-commit-to-branch
+    #  args: ['--pattern', '^(?!((fix|feat)\/[a-zA-Z0-9\-]+)$).*']

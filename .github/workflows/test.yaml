@@ -1,0 +1,51 @@
+on:
+  push:
+    branches:
+      -  main
+  pull_request:
+    branches:
+      - main
+
+name: Test and check
+
+jobs:
+  test:
+    name: Automated tests and checks
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+            # Needed to run doc tests in cargo llvm-cov
+            toolchain: nightly
+            components: rustfmt,clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Install latest nextest release
+        uses: taiki-e/install-action@nextest
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: Collect coverage data
+        run: cargo llvm-cov --doctests --all --codecov --output-path codecov.json
+
+      - name: Upload coverage data to codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: codecov.json
+          fail_ci_if_error: true
+
+      - name: Clippy
+        run: |-
+          cargo clippy 

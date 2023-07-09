@@ -1,13 +1,42 @@
-mod solver;
-mod tile_matcher;
+use std::collections::HashMap;
 
-use solver::Solver;
-use tile_matcher::TileMatchBuilder;
-
-use rand_seeder::Seeder;
+use csp::Constraint;
 use rand::prelude::SmallRng;
-use rand::Rng;
+use rand::seq::SliceRandom;
+use rand_seeder::Seeder;
 
+fn main() {
+    let mut rng = simple_rng("hello world bilbo");
+
+    let mut domains = HashMap::<char, Vec<u32>>::new();
+    domains.insert('A', vec![1, 2, 3]);
+    domains.insert('B', vec![1, 2, 3]);
+    domains.insert('C', vec![1, 2, 3]);
+
+    let mut constraints = HashMap::<(char, char), Constraint<u32>>::new();
+    constraints.insert(('A', 'B'), Box::new(|a, b| a > b));
+    constraints.insert(('B', 'A'), Box::new(|b, a| b < a));
+    constraints.insert(('B', 'C'), Box::new(|b, c| b == c));
+    constraints.insert(('C', 'B'), Box::new(|c, b| c == b));
+
+    let arcs = vec![('A', 'B'), ('B', 'A'), ('B', 'C'), ('C', 'B')];
+
+    loop {
+        csp::ac3(&mut domains, &arcs, &constraints);
+        println!("{domains:#?}");
+        if let Some((v, d)) = domains.iter_mut().find(|(_, d)| d.len() > 1) {
+            if let Some(selected) = d.choose(&mut rng).copied() {
+                println!("Keeping {selected} from {v}");
+                d.retain(|dv| *dv == selected);
+            }
+        } else {
+            println!("The end!");
+            break;
+        }
+    }
+}
+
+/*
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rules = TileMatchBuilder::new()
         // 0
@@ -105,9 +134,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn simple_rng(seed_str: &str) -> SmallRng {
-    Seeder::from(seed_str).make_rng()
-}
 
 fn select_random_variable_domain_value(r: &mut SmallRng, solver: &mut Solver<u32, i32>) -> bool {
     let remaining = solver.unresolved_variables().collect::<Vec<_>>();
@@ -120,4 +146,15 @@ fn select_random_variable_domain_value(r: &mut SmallRng, solver: &mut Solver<u32
     else {
         false
     }
+}
+*/
+
+fn simple_rng(seed_str: &str) -> SmallRng {
+    Seeder::from(seed_str).make_rng()
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn generate() {}
 }
