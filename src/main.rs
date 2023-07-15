@@ -1,153 +1,247 @@
 use std::collections::HashMap;
+use std::fmt::Display;
 
-use csp::Constraint;
+use csp::ConstraintProvider;
 use rand::prelude::SmallRng;
 use rand::seq::SliceRandom;
 use rand_seeder::Seeder;
 
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+/// Define a position on the 2d map.
+/// Assume that **Down the screen** is lower Y -- The bottom of the screen y = 0.
+#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
+pub struct Coordinate(usize, usize);
+
+impl Coordinate {
+    /// Returns the direction `other` is in relation to `self`.
+    pub fn is_adjacent(&self, other: &Self) -> Option<Direction> {
+        let x_adjacent =
+            (self.0 > 0 && self.0 - 1 == other.0) || (self.0 < usize::MAX && self.0 + 1 == other.0);
+        let y_adjacent =
+            (self.1 > 0 && self.1 - 1 == other.1) || (self.1 < usize::MAX && self.1 + 1 == other.1);
+
+        if !(x_adjacent ^ y_adjacent) {
+            None
+        } else if self.0 < other.0 {
+            Some(Direction::Right)
+        } else if self.0 > other.0 {
+            Some(Direction::Left)
+        } else if self.1 < other.1 {
+            Some(Direction::Up)
+        } else {
+            Some(Direction::Down)
+        }
+    }
+}
+
+/// Collection of tiles and valid relationships to each other.
+pub struct TileSet {
+    /// Visual reference for what each tile is.
+    pub tiles: Vec<char>,
+
+    // Tile index relation to other tile indexes by direction. E.g. `tiles`
+    // index 0 is relations index 0, and has `[up, down, left, right]` where `up`
+    // is a vec of indexes into `tiles`.
+    pub relations: Vec<[Vec<usize>; 4]>,
+}
+
+fn new_relation(
+    up: Vec<usize>,
+    down: Vec<usize>,
+    left: Vec<usize>,
+    right: Vec<usize>,
+) -> [Vec<usize>; 4] {
+    [up, down, left, right]
+}
+
+impl Default for TileSet {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl TileSet {
+    pub fn new() -> Self {
+        // Tiles:
+        // ░
+        // ┌─┐
+        // │▓│
+        // └─┘
+        //                           0    1    2    3    4    5    6    7
+        let tiles: Vec<char> = vec!['░', '┌', '─', '┐', '│', '▓', '└', '┘'];
+        // up down left right (where "up" means "this tile is below the provided one")
+        let relations = vec![
+            // 0
+            new_relation(
+                vec![0, 2, 6, 7],
+                vec![0, 1, 2, 3],
+                vec![0, 3, 4, 7],
+                vec![0, 1, 4, 6],
+            ),
+            // 1 ┌
+            new_relation(vec![0, 2, 6, 7], vec![4], vec![0, 4, 3, 7], vec![2]),
+            // 2 ─
+            new_relation(vec![0, 2, 6, 7], vec![2, 5], vec![1, 6, 2], vec![2, 3, 7]),
+            // 3 ┐
+            new_relation(vec![0, 2, 6, 7], vec![4], vec![2], vec![0, 1, 4, 6]),
+            // 4 │
+            new_relation(vec![1, 3, 4], vec![4, 6, 7], vec![0, 5], vec![0, 5]),
+            // 5 ▓
+            new_relation(vec![2, 5], vec![2, 5], vec![4, 5], vec![4, 5]),
+            // 6 └
+            new_relation(vec![4], vec![0, 1, 2, 3], vec![0, 3, 4, 7], vec![2]),
+            // 7 ┘
+            new_relation(vec![4], vec![0, 1, 2, 3], vec![2], vec![]),
+        ];
+
+        Self { tiles, relations }
+    }
+
+    fn debug(&self) {
+        for (i, t) in self.tiles.iter().enumerate() {
+            let rels = &self.relations[i];
+            println!("Tile {i}: {t}");
+            let up = &rels[0];
+            let down = &rels[1];
+            let left = &rels[2];
+            let right = &rels[3];
+            for o in up.iter() {
+                println!(" up    {}", &self.tiles[*o]);
+                println!("       {t}");
+                println!("     xxx")
+            }
+            for o in down.iter() {
+                println!("       {t}");
+                println!(" down  {}", &self.tiles[*o]);
+                println!("     xxx")
+            }
+            for o in left.iter() {
+                println!(" left  {}{t}", &self.tiles[*o]);
+                println!("     xxx")
+            }
+            for o in right.iter() {
+                println!(" right {t}{}", &self.tiles[*o]);
+                println!("     xxx")
+            }
+        }
+    }
+}
+
+// up down left right
+fn get_relation_index(dir: &Direction) -> usize {
+    match dir {
+        Direction::Up => 0,
+        Direction::Down => 1,
+        Direction::Left => 2,
+        Direction::Right => 3,
+    }
+}
+
+impl Display for Coordinate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("({}, {})", self.0, self.1))
+    }
+}
+
+impl Display for Direction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Direction::Up => f.write_str("up"),
+            Direction::Down => f.write_str("down"),
+            Direction::Left => f.write_str("left"),
+            Direction::Right => f.write_str("right"),
+        }
+    }
+}
+
+impl ConstraintProvider<Coordinate, usize> for TileSet {
+    fn check(&self, a: Coordinate, av: &usize, b: Coordinate, bv: &usize) -> bool {
+        if let Some(dir) = a.is_adjacent(&b) {
+            self.relations[*av][get_relation_index(&dir)].contains(bv)
+        } else {
+            false
+        }
+    }
+}
+
+fn build_arcs(x_lim: usize, y_lim: usize) -> Vec<(Coordinate, Coordinate)> {
+    let mut arcs = vec![];
+    for x in 0..x_lim {
+        for y in 0..y_lim {
+            let base = Coordinate(x, y);
+            if x < x_lim - 1 {
+                arcs.push((base, Coordinate(x + 1, y)));
+                arcs.push((Coordinate(x + 1, y), base));
+            }
+            if y < y_lim - 1 {
+                arcs.push((base, Coordinate(x, y + 1)));
+                arcs.push((Coordinate(x, y + 1), base));
+            }
+        }
+    }
+
+    arcs
+}
+
 fn main() {
-    let mut rng = simple_rng("hello world bilbo");
+    let mut rng = simple_rng("hello world oasdf");
 
-    let mut domains = HashMap::<char, Vec<u32>>::new();
-    domains.insert('A', vec![1, 2, 3]);
-    domains.insert('B', vec![1, 2, 3]);
-    domains.insert('C', vec![1, 2, 3]);
+    let tiles = TileSet::new();
+    let starting_domain = (0..tiles.tiles.len()).collect::<Vec<_>>();
+    let x_lim = 40;
+    let y_lim = 10;
+    tiles.debug();
 
-    let mut constraints = HashMap::<(char, char), Constraint<u32>>::new();
-    constraints.insert(('A', 'B'), Box::new(|a, b| a > b));
-    constraints.insert(('B', 'A'), Box::new(|b, a| b < a));
-    constraints.insert(('B', 'C'), Box::new(|b, c| b == c));
-    constraints.insert(('C', 'B'), Box::new(|c, b| c == b));
+    let mut domains = HashMap::new();
+    for x in 0..x_lim {
+        for y in 0..y_lim {
+            domains.insert(Coordinate(x, y), starting_domain.clone());
+        }
+    }
 
-    let arcs = vec![('A', 'B'), ('B', 'A'), ('B', 'C'), ('C', 'B')];
+    let arcs = build_arcs(x_lim, y_lim);
 
     loop {
-        csp::ac3(&mut domains, &arcs, &constraints);
-        println!("{domains:#?}");
-        if let Some((v, d)) = domains.iter_mut().find(|(_, d)| d.len() > 1) {
-            if let Some(selected) = d.choose(&mut rng).copied() {
-                println!("Keeping {selected} from {v}");
-                d.retain(|dv| *dv == selected);
+        csp::ac3(&mut domains, &arcs, &tiles);
+        // find most constrained, reduce it, if there are any left to reduce.
+        if let Some((_, reducable)) = domains
+            .iter_mut()
+            .filter(|(_, v)| v.len() > 1)
+            .min_by(|a, b| a.1.len().cmp(&b.1.len()))
+        {
+            if let Some(selected) = reducable.choose(&mut rng).copied() {
+                reducable.retain(|dv| *dv == selected);
             }
         } else {
-            println!("The end!");
-            break;
-        }
-    }
-}
-
-/*
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let rules = TileMatchBuilder::new()
-        // 0
-        .up_down(0, 0)
-        .up_down(0, 4)
-        .up_down(0, 6)
-        .up_down(0, 2)
-        .left_right(0, 0)
-        .left_right(0, 4)
-        .left_right(0, 5)
-        .left_right(0, 9)
-        // 1
-        .up_down(1, 0)
-        .left_right(1, 7)
-        // 2
-        .up_down(2, 0)
-        .left_right(2, 1)
-        .left_right(2, 2)
-        // 3
-        .up_down(3, 3)
-        .up_down(3, 2)
-        .left_right(3, 3)
-        .left_right(3, 7)
-        // 4
-        .up_down(4, 9)
-        .left_right(4, 6)
-        // 5
-        .up_down(5, 0)
-        .left_right(5, 2)
-        // 6
-        .up_down(6, 3)
-        .left_right(6, 6)
-        .left_right(6, 8)
-        // 7
-        .up_down(7, 1)
-        .left_right(7, 0)
-        // 8
-        .up_down(8, 7)
-        .left_right(8, 0)
-        // 9
-        .up_down(9, 9)
-        .up_down(9, 5)
-        .left_right(9, 3)
-        // the end
-        .build();
-
-    let mut solver = Solver::new(
-        vec!(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
-    );
-
-    let width = 10u32;
-    let height = 10u32;
-
-    for x in 0..width {
-        for y in 0..height {
-            solver.add_variable(x + y * width);
-        }
-    }
-
-    for x in 0..width {
-        for y in 0..height {
-            let index = x + y * width;
-            if x > 0 {
-                solver.add_binary_constraint(index, index - 1, rules.left())?;
-            }
-            if x < width - 1 {
-                solver.add_binary_constraint(index, index + 1, rules.right())?;
-            }
-            if y > 0 {
-                solver.add_binary_constraint(index, index - width, rules.down())?;
-            }
-            if y < height - 1{
-                solver.add_binary_constraint(index, index + width, rules.up())?;
-            }
-
-        }
-    }
-
-    let mut rng = simple_rng("hello world bilbo");
-
-    loop {
-        if solver.solve() {
-            if ! select_random_variable_domain_value(&mut rng, &mut solver) {
-                println!("No more unresolved variables");
-                break;
-            }
-        }
-        else {
-            println!("No options left");
+            println!("no more reducing possible");
             break;
         }
     }
 
-    println!("{}", solver);
-    Ok(())
-}
-
-
-fn select_random_variable_domain_value(r: &mut SmallRng, solver: &mut Solver<u32, i32>) -> bool {
-    let remaining = solver.unresolved_variables().collect::<Vec<_>>();
-    if remaining.len() > 0 {
-        let (v, domain) = remaining[r.gen_range(0..remaining.len())].clone();
-        let selected = domain[r.gen_range(0..domain.len())];
-        solver.set_domain(*v, selected);
-        true
+    if domains.iter().all(|(_, tiles)| tiles.len() == 1) {
+        println!("Result:");
+        for y in (0..y_lim).rev() {
+            print!("{y:>3} ");
+            for x in 0..x_lim {
+                if let Some(v) = domains[&Coordinate(x, y)].first() {
+                    print!("{}", tiles.tiles[*v]);
+                } else {
+                    print!("x");
+                }
+            }
+            println!();
+        }
+    } else {
+        println!("Sad face");
     }
-    else {
-        false
-    }
 }
-*/
 
 fn simple_rng(seed_str: &str) -> SmallRng {
     Seeder::from(seed_str).make_rng()
@@ -155,6 +249,20 @@ fn simple_rng(seed_str: &str) -> SmallRng {
 
 #[cfg(test)]
 mod test {
+    use crate::{Coordinate, Direction};
+
+    #[test]
+    fn coordinate_is_adjacent() {
+        let c0_0 = Coordinate(0, 0);
+        let c1_1 = Coordinate(1, 1);
+        let c0_1 = Coordinate(0, 1);
+        assert_eq!(c0_0.is_adjacent(&c1_1), None);
+        assert_eq!(c0_0.is_adjacent(&c0_1), Some(Direction::Up));
+        assert_eq!(c0_1.is_adjacent(&c0_0), Some(Direction::Down));
+        assert_eq!(c0_1.is_adjacent(&c1_1), Some(Direction::Right));
+        assert_eq!(c1_1.is_adjacent(&c0_1), Some(Direction::Left));
+    }
+
     #[test]
     fn generate() {}
 }

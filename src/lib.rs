@@ -10,12 +10,20 @@ use std::{
     hash::{BuildHasher, Hash},
 };
 
+/// Allows users to provide a mechanism to validate binary constraints between
+/// two variables and their value.
 pub trait ConstraintProvider<V, D> {
-    fn check(&self, x: V, xd: &D, y: V, yd: &D) -> bool;
+    /// Determine if variable a has a valid relationship with b based on their
+    /// identity and value.
+    fn check(&self, a: V, a_value: &D, b: V, b_value: &D) -> bool;
 }
 
+/// Utility type for making boxes a little simpler. Probably should be removed
+/// from public API as it is only really needed for the [`HashMap`] implementation
+/// of [`ConstraintProvider`].
 pub type Constraint<D> = Box<dyn Fn(&D, &D) -> bool>;
 
+/// Utility function for making [`Constraint`]s.
 pub fn new_constraint<D>(f: impl Fn(&D, &D) -> bool + 'static) -> Constraint<D> {
     Box::new(f)
 }
@@ -25,9 +33,10 @@ where
     V: Eq + PartialEq + Hash + Copy,
     S1: BuildHasher,
 {
-    fn check(&self, x: V, xd: &D, y: V, yd: &D) -> bool {
+    fn check(&self, a: V, av: &D, b: V, bv: &D) -> bool {
         // TODO: Default is to be unconstrained, i guess.
-        self.get(&(x, y)).map_or(true, |checker| checker(xd, yd))
+        self.get(&(a, b))
+            .map_or(true, |checker: &Constraint<D>| checker(av, bv))
     }
 }
 
