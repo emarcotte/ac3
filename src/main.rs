@@ -5,8 +5,8 @@ use rand::prelude::SmallRng;
 use rand_seeder::Seeder;
 use tile_matcher::{Coordinate, TileSet};
 
-mod tile_matcher;
 mod backtrack;
+mod tile_matcher;
 
 fn build_arcs(x_lim: usize, y_lim: usize) -> Vec<(Coordinate, Coordinate)> {
     let mut arcs = vec![];
@@ -29,7 +29,7 @@ fn build_arcs(x_lim: usize, y_lim: usize) -> Vec<(Coordinate, Coordinate)> {
 
 /*
 fn insert(domain: &mut HashMap<Coordinate, Vec<usize>>, bottom_left: Coordinate, tiles: Vec<Vec<usize>>) {
-    
+
 }
  */
 
@@ -55,6 +55,7 @@ fn main() {
     print_domains(&domains, y_lim, x_lim, tiles);
 }
 
+#[allow(dead_code)]
 fn print_domain_counts(domains: &HashMap<Coordinate, Vec<usize>>, y_lim: usize, x_lim: usize) {
     for y in (0..y_lim).rev() {
         print!("{y:>3} ");

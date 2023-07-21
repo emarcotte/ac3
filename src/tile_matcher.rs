@@ -27,6 +27,7 @@ pub struct Coordinate(usize, usize);
 
 impl Coordinate {
     /// Make a coordinate
+    #[allow(dead_code)]
     pub fn new(x: usize, y: usize) -> Self {
         Self(x, y)
     }
@@ -79,7 +80,6 @@ impl Default for TileSet {
 }
 
 impl TileSet {
-
     pub fn new() -> Self {
         // Tiles:
         // ░
@@ -112,8 +112,7 @@ impl TileSet {
 
     /// Set the tileset with basically a bunch of box drawing relationships.
     fn make_box_only(&mut self) {
-       self 
-            .add_relation(Direction::Up, 0, &[0, 8, 6, 7])
+        self.add_relation(Direction::Up, 0, &[0, 8, 6, 7])
             .add_relation(Direction::Left, 0, &[0, 3, 9, 7])
             .add_relation(Direction::Up, 1, &[0, 6, 7, 8])
             .add_relation(Direction::Left, 1, &[0, 3, 9, 7])
@@ -159,6 +158,8 @@ impl ConstraintProvider<Coordinate, usize> for TileSet {
 
 #[cfg(test)]
 mod test {
+    use crate::ConstraintProvider;
+
     use super::{Coordinate, Direction, TileSet};
 
     #[test]
@@ -177,5 +178,34 @@ mod test {
     fn new_tileset() {
         let t = TileSet::default();
         assert_eq!(t.tiles.len(), 10);
+    }
+
+    #[test]
+    fn check_ignores_unrelated_coordinates() {
+        let t = TileSet::default();
+        assert_eq!(t.tiles.len(), 10);
+        assert!(!t.check(Coordinate::new(0, 0), &0, Coordinate::new(2, 0), &0));
+    }
+
+    #[test]
+    fn check_related() {
+        let t = TileSet::default();
+        assert_eq!(t.tiles.len(), 10);
+        assert!(t.check(Coordinate::new(0, 0), &0, Coordinate::new(1, 0), &0));
+    }
+
+    #[test]
+    fn check_for_non_related() {
+        let t = TileSet::default();
+        assert_eq!(t.tiles.len(), 10);
+        assert!(!t.check(Coordinate::new(0, 0), &0, Coordinate::new(1, 0), &5));
+    }
+
+    #[test]
+    fn direction_reverse() {
+        assert_eq!(Direction::Up.reverse(), Direction::Down);
+        assert_eq!(Direction::Down.reverse(), Direction::Up);
+        assert_eq!(Direction::Left.reverse(), Direction::Right);
+        assert_eq!(Direction::Right.reverse(), Direction::Left);
     }
 }

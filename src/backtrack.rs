@@ -15,8 +15,7 @@ pub fn backtrack_reduce<V, D, DP, CP>(
     arcs: &mut [(V, V)],
     constraints: &CP,
     rng: &mut SmallRng,
-)
-where
+) where
     V: Eq + Copy,
     D: PartialEq + Copy,
     DP: DomainProvider<V, D>,
@@ -48,7 +47,7 @@ where
                     domains.update_domain(&v, reducable);
                 }
             }
-                // print_domain_counts(&domains, y_lim, x_lim);
+            // print_domain_counts(&domains, y_lim, x_lim);
         }
         // Alternatively, if there are no viable selections to be made
         else if !domains.is_consistent() {

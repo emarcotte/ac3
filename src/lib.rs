@@ -87,16 +87,11 @@ where
     }
 
     fn is_consistent(&self) -> bool {
-        ! self.iter().any(|(_, tiles)| tiles.is_empty())
+        !self.iter().any(|(_, tiles)| tiles.is_empty())
     }
 }
 
-fn revise<V, D, DP, CP>(
-    domains: &mut DP,
-    constraints: &CP,
-    x: V,
-    y: V,
-) -> bool
+fn revise<V, D, DP, CP>(domains: &mut DP, constraints: &CP, x: V, y: V) -> bool
 where
     V: Copy,
     DP: DomainProvider<V, D>,
