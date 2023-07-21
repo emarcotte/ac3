@@ -1,7 +1,4 @@
 use crate::ConstraintProvider;
-use core::fmt::Display;
-
-
 
 /// Direction tracks relationships between tiles.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
@@ -10,6 +7,17 @@ pub enum Direction {
     Left,
     Right,
     Up,
+}
+
+impl Direction {
+    fn reverse(self) -> Direction {
+        match self {
+            Direction::Down => Direction::Up,
+            Direction::Up => Direction::Down,
+            Direction::Left => Direction::Right,
+            Direction::Right => Direction::Left,
+        }
+    }
 }
 
 /// Define a position on the 2d map.
@@ -71,96 +79,70 @@ impl Default for TileSet {
 }
 
 impl TileSet {
+
     pub fn new() -> Self {
         // Tiles:
         // ░
         // ┌─┐
         // │▓│
         // └─┘
-        //                           0    1    2    3    4    5    6    7
-        let tiles: Vec<char> = vec!['░', '┌', '─', '┐', '│', '▓', '└', '┘'];
+        //                           0    1    2    3    4    5    6    7     8    9
+        let tiles: Vec<char> = vec!['░', '┌', '─', '┐', '│', '▓', '└', '┘', '─', '│'];
         // up down left right (where "up" means "this tile is below the provided one")
-        let relations = vec![
-            // 0
-            new_relation(
-                vec![0, 2, 6, 7],
-                vec![0, 1, 2, 3],
-                vec![0, 3, 4, 7],
-                vec![0, 1, 4, 6],
-            ),
-            // 1 ┌
-            new_relation(vec![0, 2, 6, 7], vec![4], vec![0, 4, 3, 7], vec![2]),
-            // 2 ─
-            new_relation(vec![0, 2, 5, 6, 7], vec![0, 1, 2, 3, 5,], vec![1, 6, 2], vec![2, 3, 7]),
-            // 3 ┐
-            new_relation(vec![0, 2, 6, 7], vec![4], vec![2], vec![0, 1, 4, 6]),
-            // 4 │
-            new_relation(vec![1, 3, 4], vec![4, 6, 7], vec![0, 5], vec![0, 5]),
-            // 5 ▓
-            new_relation(vec![2, 5], vec![2, 5], vec![4, 5], vec![4, 5]),
-            // 6 └
-            new_relation(vec![4], vec![0, 1, 2, 3], vec![0, 3, 4, 7], vec![2]),
-            // 7 ┘
-            new_relation(vec![4], vec![0, 1, 2, 3], vec![2], vec![]),
-        ];
+        let relations = tiles
+            .iter()
+            .map(|_| new_relation(vec![], vec![], vec![], vec![]))
+            .collect();
+        let mut new_tileset = Self { tiles, relations };
 
-        Self { tiles, relations }
+        new_tileset.make_box_only();
+
+        new_tileset
     }
 
-    pub fn debug(&self) {
-        for (i, t) in self.tiles.iter().enumerate() {
-            let rels = &self.relations[i];
-            println!("Tile {i}: {t}");
-            let up = &rels[0];
-            let down = &rels[1];
-            let left = &rels[2];
-            let right = &rels[3];
-            for o in up.iter() {
-                println!(" up    {}", &self.tiles[*o]);
-                println!("       {t}");
-                println!("     xxx");
-            }
-            for o in down.iter() {
-                println!("       {t}");
-                println!(" down  {}", &self.tiles[*o]);
-                println!("     xxx");
-            }
-            for o in left.iter() {
-                println!(" left  {}{t}", &self.tiles[*o]);
-                println!("     xxx");
-            }
-            for o in right.iter() {
-                println!(" right {t}{}", &self.tiles[*o]);
-                println!("     xxx");
-            }
+    /// Add a bi-directional relationship between from and to elements.
+    fn add_relation(&mut self, dir: Direction, from: usize, to: &[usize]) -> &mut Self {
+        let reverse = dir.reverse();
+        for to in to {
+            self.relations[from][get_relation_index(dir)].push(*to);
+            self.relations[*to][get_relation_index(reverse)].push(from);
         }
+        self
+    }
+
+    /// Set the tileset with basically a bunch of box drawing relationships.
+    fn make_box_only(&mut self) {
+       self 
+            .add_relation(Direction::Up, 0, &[0, 8, 6, 7])
+            .add_relation(Direction::Left, 0, &[0, 3, 9, 7])
+            .add_relation(Direction::Up, 1, &[0, 6, 7, 8])
+            .add_relation(Direction::Left, 1, &[0, 3, 9, 7])
+            .add_relation(Direction::Up, 2, &[0, 6, 7, 8])
+            .add_relation(Direction::Left, 2, &[1, 2])
+            .add_relation(Direction::Up, 3, &[0, 6, 7, 8])
+            .add_relation(Direction::Left, 3, &[2])
+            .add_relation(Direction::Up, 4, &[1, 4])
+            .add_relation(Direction::Left, 4, &[0, 3, 9, 7])
+            .add_relation(Direction::Up, 5, &[5, 2])
+            .add_relation(Direction::Left, 5, &[5, 4])
+            .add_relation(Direction::Up, 6, &[4])
+            .add_relation(Direction::Left, 6, &[0, 3, 9, 7])
+            .add_relation(Direction::Up, 7, &[9])
+            .add_relation(Direction::Left, 7, &[8])
+            .add_relation(Direction::Up, 8, &[5])
+            .add_relation(Direction::Left, 8, &[8, 6])
+            .add_relation(Direction::Up, 9, &[9, 3])
+            .add_relation(Direction::Left, 9, &[5]);
     }
 }
 
-// up down left right
+/// Utility for indexing into relations.
 fn get_relation_index(dir: Direction) -> usize {
     match dir {
         Direction::Up => 0,
         Direction::Down => 1,
         Direction::Left => 2,
         Direction::Right => 3,
-    }
-}
-
-impl Display for Coordinate {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("({}, {})", self.0, self.1))
-    }
-}
-
-impl Display for Direction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Direction::Up => f.write_str("up"),
-            Direction::Down => f.write_str("down"),
-            Direction::Left => f.write_str("left"),
-            Direction::Right => f.write_str("right"),
-        }
     }
 }
 
@@ -177,7 +159,7 @@ impl ConstraintProvider<Coordinate, usize> for TileSet {
 
 #[cfg(test)]
 mod test {
-    use super::{Coordinate, Direction};
+    use super::{Coordinate, Direction, TileSet};
 
     #[test]
     fn coordinate_is_adjacent() {
@@ -192,5 +174,8 @@ mod test {
     }
 
     #[test]
-    fn generate() {}
+    fn new_tileset() {
+        let t = TileSet::default();
+        assert_eq!(t.tiles.len(), 10);
+    }
 }

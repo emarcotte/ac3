@@ -40,16 +40,30 @@ where
     }
 }
 
-pub trait DomainProvider<V, D> {
+pub trait DomainProvider<V, D>: Clone {
+    /// Get the domain values for the given variable.
     fn get_domain(&self, var: &V) -> Option<&Vec<D>>;
+
+    /// Allow the caller to assume ownership of the domain. In most cases the
+    /// caller will then call `update_domain` with new values.
     fn take_domain(&mut self, var: &V) -> Option<Vec<D>>;
+
+    /// Replace the domain value for the given variable.
     fn update_domain(&mut self, var: &V, d: Vec<D>);
+
+    /// Find the next variable which has a domain that should be reduced somehow.
+    fn next_reducable_variable(&mut self) -> Option<V>;
+
+    /// Check every variable's domains to ensure they're consistent.
+    #[must_use]
+    fn is_consistent(&self) -> bool;
 }
 
 impl<K, D, S1> DomainProvider<K, D> for HashMap<K, Vec<D>, S1>
 where
     K: Eq + PartialEq + Hash + Copy,
-    S1: BuildHasher,
+    S1: BuildHasher + Clone,
+    D: Clone,
 {
     fn get_domain(&self, var: &K) -> Option<&Vec<D>> {
         self.get(var)
@@ -62,16 +76,31 @@ where
     fn update_domain(&mut self, var: &K, d: Vec<D>) {
         self.insert(*var, d);
     }
+
+    fn next_reducable_variable(&mut self) -> Option<K> {
+        // TODO: This should PROBABLY, explictly, utilize RNG. As it stands
+        // it is random due to hash ordering in iteration.
+        self.iter_mut()
+            .filter(|(_, v)| v.len() > 1)
+            .min_by(|a, b| a.1.len().cmp(&b.1.len()))
+            .map(|min| *min.0)
+    }
+
+    fn is_consistent(&self) -> bool {
+        ! self.iter().any(|(_, tiles)| tiles.is_empty())
+    }
 }
 
-fn revise<V, D>(
-    domains: &mut dyn DomainProvider<V, D>,
-    constraints: &dyn ConstraintProvider<V, D>,
+fn revise<V, D, DP, CP>(
+    domains: &mut DP,
+    constraints: &CP,
     x: V,
     y: V,
 ) -> bool
 where
     V: Copy,
+    DP: DomainProvider<V, D>,
+    CP: ConstraintProvider<V, D>,
 {
     let mut revised = false;
 
@@ -119,12 +148,11 @@ where
 /// assert_eq!(domains.get(&'a'), Some(&vec!(1)));
 /// assert_eq!(domains.get(&'b'), Some(&vec!(1)));
 /// ```
-pub fn ac3<V, D>(
-    domains: &mut dyn DomainProvider<V, D>,
-    arcs: &[(V, V)],
-    constraints: &dyn ConstraintProvider<V, D>,
-) where
+pub fn ac3<V, D, CP, DP>(domains: &mut DP, arcs: &[(V, V)], constraints: &CP)
+where
     V: PartialEq + Eq + Copy,
+    DP: DomainProvider<V, D>,
+    CP: ConstraintProvider<V, D>,
 {
     let mut queue = arcs.iter().copied().collect::<VecDeque<_>>();
 
