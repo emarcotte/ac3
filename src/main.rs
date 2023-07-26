@@ -27,13 +27,24 @@ fn build_arcs(x_lim: usize, y_lim: usize) -> Vec<(Coordinate, Coordinate)> {
     arcs
 }
 
-/*
-fn insert(domain: &mut HashMap<Coordinate, Vec<usize>>, bottom_left: Coordinate, tiles: Vec<Vec<usize>>) {
-
+/// Inserts some data into the map to pre-seed some interesting shapes.
+fn insert(
+    domain: &mut HashMap<Coordinate, Vec<usize>>,
+    bottom_left: Coordinate,
+    tiles: Vec<Vec<usize>>,
+) {
+    for (i_y, row) in tiles.iter().enumerate() {
+        for (i_x, cell) in row.iter().enumerate() {
+            domain.insert(
+                Coordinate::new(bottom_left.x + i_x, bottom_left.y + i_y),
+                vec![*cell],
+            );
+        }
+    }
 }
- */
 
 fn main() {
+    // TODO: The hashmap next domain value is not stable/doesn't use RNG.
     let mut rng = simple_rng("hello world oasdf");
 
     let tiles = TileSet::new();
@@ -47,6 +58,101 @@ fn main() {
             domains.insert(Coordinate::new(x, y), starting_domain.clone());
         }
     }
+
+    insert(
+        &mut domains,
+        Coordinate::new(5, 5),
+        vec![
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+        ],
+    );
+    insert(
+        &mut domains,
+        Coordinate::new(15, 5),
+        vec![
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+        ],
+    );
+    insert(
+        &mut domains,
+        Coordinate::new(25, 5),
+        vec![
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+        ],
+    );
+    insert(
+        &mut domains,
+        Coordinate::new(30, 5),
+        vec![
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
+        ],
+    );
+
+    insert(
+        &mut domains,
+        Coordinate::new(5, 10),
+        vec![
+            vec![
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+            vec![
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+            vec![
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+            vec![
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+            vec![
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+        ],
+    );
+
+    insert(
+        &mut domains,
+        Coordinate::new(28, 11),
+        vec![
+            vec![
+                5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+            ],
+            vec![
+                5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+            ],
+            vec![
+                5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+            ],
+            vec![
+                5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+            ],
+            vec![
+                5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+            ],
+            vec![
+                5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+            ],
+            vec![
+                5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+            ],
+        ],
+    );
 
     let mut arcs = build_arcs(x_lim, y_lim);
 

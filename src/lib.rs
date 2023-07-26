@@ -61,7 +61,7 @@ pub trait DomainProvider<V, D>: Clone {
 
 impl<K, D, S1> DomainProvider<K, D> for HashMap<K, Vec<D>, S1>
 where
-    K: Eq + PartialEq + Hash + Copy,
+    K: Eq + PartialEq + Hash + Copy + Ord,
     S1: BuildHasher + Clone,
     D: Clone,
 {
@@ -78,11 +78,9 @@ where
     }
 
     fn next_reducable_variable(&mut self) -> Option<K> {
-        // TODO: This should PROBABLY, explictly, utilize RNG. As it stands
-        // it is random due to hash ordering in iteration.
         self.iter_mut()
             .filter(|(_, v)| v.len() > 1)
-            .min_by(|a, b| a.1.len().cmp(&b.1.len()))
+            .min_by(|(a, a_v), (b, b_v)| a_v.len().cmp(&b_v.len()).then(a.cmp(b)))
             .map(|min| *min.0)
     }
 
@@ -91,6 +89,8 @@ where
     }
 }
 
+/// Removes invalid domain values from a given variable `x`, by verifying
+/// constraints in relation to `y`.
 fn revise<V, D, DP, CP>(domains: &mut DP, constraints: &CP, x: V, y: V) -> bool
 where
     V: Copy,
@@ -145,7 +145,7 @@ where
 /// ```
 pub fn ac3<V, D, CP, DP>(domains: &mut DP, arcs: &[(V, V)], constraints: &CP)
 where
-    V: PartialEq + Eq + Copy,
+    V: PartialEq + Copy,
     DP: DomainProvider<V, D>,
     CP: ConstraintProvider<V, D>,
 {
@@ -164,6 +164,20 @@ where
 mod test {
     use super::*;
     use std::collections::HashMap;
+
+    #[test]
+    fn validate_ac3() {
+        // TODO: This test is duplicated from doctests due to the doc-tests not actually generating coverage data yet :(
+        let mut domains = HashMap::from([('a', vec![1, 2, 3]), ('b', vec![1, 2, 3])]);
+        let constraints = HashMap::from([
+            (('a', 'b'), new_constraint(|a, b| a == b && *a < 2)),
+            (('b', 'a'), new_constraint(|a, b| a == b && *b < 2)),
+        ]);
+        let arcs = vec![('a', 'b'), ('b', 'a')];
+        ac3(&mut domains, &arcs, &constraints);
+        assert_eq!(domains.get(&'a'), Some(&vec!(1)));
+        assert_eq!(domains.get(&'b'), Some(&vec!(1)));
+    }
 
     #[test]
     fn revise_shrinks_domain_based_on_constraints() {

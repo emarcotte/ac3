@@ -16,7 +16,7 @@ pub fn backtrack_reduce<V, D, DP, CP>(
     constraints: &CP,
     rng: &mut SmallRng,
 ) where
-    V: Eq + Copy,
+    V: PartialEq + Copy,
     D: PartialEq + Copy,
     DP: DomainProvider<V, D>,
     CP: ConstraintProvider<V, D>,

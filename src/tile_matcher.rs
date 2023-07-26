@@ -23,29 +23,44 @@ impl Direction {
 /// Define a position on the 2d map.
 /// Assume that **Down the screen** is lower Y -- The bottom of the screen y = 0.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
-pub struct Coordinate(usize, usize);
+pub struct Coordinate {
+    pub x: usize,
+    pub y: usize,
+}
+
+impl Ord for Coordinate {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.x.cmp(&other.x).then(self.y.cmp(&other.y))
+    }
+}
+
+impl PartialOrd for Coordinate {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
 impl Coordinate {
     /// Make a coordinate
     #[allow(dead_code)]
     pub fn new(x: usize, y: usize) -> Self {
-        Self(x, y)
+        Self { x, y }
     }
 
     /// Returns the direction `other` is in relation to `self`.
     pub fn is_adjacent(&self, other: &Self) -> Option<Direction> {
         let x_adjacent =
-            (self.0 > 0 && self.0 - 1 == other.0) || (self.0 < usize::MAX && self.0 + 1 == other.0);
+            (self.x > 0 && self.x - 1 == other.x) || (self.x < usize::MAX && self.x + 1 == other.x);
         let y_adjacent =
-            (self.1 > 0 && self.1 - 1 == other.1) || (self.1 < usize::MAX && self.1 + 1 == other.1);
+            (self.y > 0 && self.y - 1 == other.y) || (self.y < usize::MAX && self.y + 1 == other.y);
 
         if !(x_adjacent ^ y_adjacent) {
             None
-        } else if self.0 < other.0 {
+        } else if self.x < other.x {
             Some(Direction::Right)
-        } else if self.0 > other.0 {
+        } else if self.x > other.x {
             Some(Direction::Left)
-        } else if self.1 < other.1 {
+        } else if self.y < other.y {
             Some(Direction::Up)
         } else {
             Some(Direction::Down)
@@ -164,9 +179,9 @@ mod test {
 
     #[test]
     fn coordinate_is_adjacent() {
-        let c0_0 = Coordinate(0, 0);
-        let c1_1 = Coordinate(1, 1);
-        let c0_1 = Coordinate(0, 1);
+        let c0_0 = Coordinate::new(0, 0);
+        let c1_1 = Coordinate::new(1, 1);
+        let c0_1 = Coordinate::new(0, 1);
         assert_eq!(c0_0.is_adjacent(&c1_1), None);
         assert_eq!(c0_0.is_adjacent(&c0_1), Some(Direction::Up));
         assert_eq!(c0_1.is_adjacent(&c0_0), Some(Direction::Down));
