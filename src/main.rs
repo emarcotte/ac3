@@ -8,7 +8,24 @@ use tile_matcher::{Coordinate, TileSet};
 mod backtrack;
 mod tile_matcher;
 
-fn build_arcs(x_lim: usize, y_lim: usize) -> Vec<(Coordinate, Coordinate)> {
+/// Inserts some data into the map to pre-seed some interesting shapes.
+pub fn insert(
+    domain: &mut HashMap<Coordinate, Vec<usize>>,
+    bottom_left: Coordinate,
+    tiles: Vec<Vec<usize>>,
+) {
+    for (i_y, row) in tiles.iter().enumerate() {
+        for (i_x, cell) in row.iter().enumerate() {
+            domain.insert(
+                Coordinate::new(bottom_left.x + i_x, bottom_left.y + i_y),
+                vec![*cell],
+            );
+        }
+    }
+}
+
+/// Builds a list of bidirectional arcs between coordinates in a 2d grid.
+pub fn build_arcs(x_lim: usize, y_lim: usize) -> Vec<(Coordinate, Coordinate)> {
     let mut arcs = vec![];
     for x in 0..x_lim {
         for y in 0..y_lim {
@@ -25,22 +42,6 @@ fn build_arcs(x_lim: usize, y_lim: usize) -> Vec<(Coordinate, Coordinate)> {
     }
 
     arcs
-}
-
-/// Inserts some data into the map to pre-seed some interesting shapes.
-fn insert(
-    domain: &mut HashMap<Coordinate, Vec<usize>>,
-    bottom_left: Coordinate,
-    tiles: Vec<Vec<usize>>,
-) {
-    for (i_y, row) in tiles.iter().enumerate() {
-        for (i_x, cell) in row.iter().enumerate() {
-            domain.insert(
-                Coordinate::new(bottom_left.x + i_x, bottom_left.y + i_y),
-                vec![*cell],
-            );
-        }
-    }
 }
 
 fn main() {
@@ -156,21 +157,15 @@ fn main() {
 
     let mut arcs = build_arcs(x_lim, y_lim);
 
-    backtrack::backtrack_reduce(&mut domains, &mut arcs, &tiles, &mut rng);
-
-    print_domains(&domains, y_lim, x_lim, tiles);
-}
-
-#[allow(dead_code)]
-fn print_domain_counts(domains: &HashMap<Coordinate, Vec<usize>>, y_lim: usize, x_lim: usize) {
-    for y in (0..y_lim).rev() {
-        print!("{y:>3} ");
-        for x in 0..x_lim {
-            let c = domains[&Coordinate::new(x, y)].len();
-            print!("{c:>3}");
+    let happy = backtrack::backtrack_reduce(&mut domains, &mut arcs, &tiles, &mut rng);
+    match happy {
+        backtrack::BacktrackResult::Consistent => {
+            print_domains(&domains, y_lim, x_lim, tiles);
         }
-        println!();
-    }
+        backtrack::BacktrackResult::NoSolution => {
+            println!("No solution found");
+        }
+    };
 }
 
 fn print_domains(

@@ -173,9 +173,19 @@ impl ConstraintProvider<Coordinate, usize> for TileSet {
 
 #[cfg(test)]
 mod test {
+    use std::cmp::Ordering;
+
     use crate::ConstraintProvider;
 
     use super::{Coordinate, Direction, TileSet};
+
+    #[test]
+    fn cmp_coordinates() {
+        assert_eq!(
+            Ordering::Less,
+            Coordinate::new(1, 1).cmp(&Coordinate::new(2, 2))
+        );
+    }
 
     #[test]
     fn coordinate_is_adjacent() {
