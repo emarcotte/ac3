@@ -1,12 +1,9 @@
 use std::collections::HashMap;
 
-use csp::ConstraintProvider;
+use csp::backtrack;
+use csp::tile_matcher::{build_arcs, Coordinate, TileSet};
 use rand::prelude::SmallRng;
 use rand_seeder::Seeder;
-use tile_matcher::{Coordinate, TileSet};
-
-mod backtrack;
-mod tile_matcher;
 
 /// Inserts some data into the map to pre-seed some interesting shapes.
 pub fn insert(
@@ -22,26 +19,6 @@ pub fn insert(
             );
         }
     }
-}
-
-/// Builds a list of bidirectional arcs between coordinates in a 2d grid.
-pub fn build_arcs(x_lim: usize, y_lim: usize) -> Vec<(Coordinate, Coordinate)> {
-    let mut arcs = vec![];
-    for x in 0..x_lim {
-        for y in 0..y_lim {
-            let base = Coordinate::new(x, y);
-            if x < x_lim - 1 {
-                arcs.push((base, Coordinate::new(x + 1, y)));
-                arcs.push((Coordinate::new(x + 1, y), base));
-            }
-            if y < y_lim - 1 {
-                arcs.push((base, Coordinate::new(x, y + 1)));
-                arcs.push((Coordinate::new(x, y + 1), base));
-            }
-        }
-    }
-
-    arcs
 }
 
 fn main() {
@@ -157,12 +134,12 @@ fn main() {
 
     let mut arcs = build_arcs(x_lim, y_lim);
 
-    let happy = backtrack::backtrack_reduce(&mut domains, &mut arcs, &tiles, &mut rng);
+    let happy = backtrack::reduce(&mut domains, &mut arcs, &tiles, &mut rng);
     match happy {
-        backtrack::BacktrackResult::Consistent => {
+        backtrack::Solution::Consistent => {
             print_domains(&domains, y_lim, x_lim, tiles);
         }
-        backtrack::BacktrackResult::NoSolution => {
+        backtrack::Solution::NoSolution => {
             println!("No solution found");
         }
     };
@@ -175,7 +152,7 @@ fn print_domains(
     tiles: TileSet,
 ) {
     if domains.iter().all(|(_, tiles)| tiles.len() == 1) {
-        println!("Result:");
+        println!("Solution:");
         for y in (0..y_lim).rev() {
             print!("{y:>3} ");
             for x in 0..x_lim {

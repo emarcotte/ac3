@@ -1,4 +1,4 @@
-use crate::ConstraintProvider;
+use crate::ac3::ConstraintProvider;
 
 /// Direction tracks relationships between tiles.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
@@ -43,11 +43,13 @@ impl PartialOrd for Coordinate {
 impl Coordinate {
     /// Make a coordinate
     #[allow(dead_code)]
+    #[must_use]
     pub fn new(x: usize, y: usize) -> Self {
         Self { x, y }
     }
 
     /// Returns the direction `other` is in relation to `self`.
+    #[must_use]
     pub fn is_adjacent(&self, other: &Self) -> Option<Direction> {
         let x_adjacent =
             (self.x > 0 && self.x - 1 == other.x) || (self.x < usize::MAX && self.x + 1 == other.x);
@@ -79,6 +81,27 @@ pub struct TileSet {
     pub relations: Vec<[Vec<usize>; 4]>,
 }
 
+/// Builds a list of bidirectional arcs between coordinates in a 2d grid.
+#[must_use]
+pub fn build_arcs(x_lim: usize, y_lim: usize) -> Vec<(Coordinate, Coordinate)> {
+    let mut arcs = vec![];
+    for x in 0..x_lim {
+        for y in 0..y_lim {
+            let base = Coordinate::new(x, y);
+            if x < x_lim - 1 {
+                arcs.push((base, Coordinate::new(x + 1, y)));
+                arcs.push((Coordinate::new(x + 1, y), base));
+            }
+            if y < y_lim - 1 {
+                arcs.push((base, Coordinate::new(x, y + 1)));
+                arcs.push((Coordinate::new(x, y + 1), base));
+            }
+        }
+    }
+
+    arcs
+}
+
 fn new_relation(
     up: Vec<usize>,
     down: Vec<usize>,
@@ -95,6 +118,7 @@ impl Default for TileSet {
 }
 
 impl TileSet {
+    #[must_use]
     pub fn new() -> Self {
         // Tiles:
         // ░
@@ -175,7 +199,7 @@ impl ConstraintProvider<Coordinate, usize> for TileSet {
 mod test {
     use std::cmp::Ordering;
 
-    use crate::ConstraintProvider;
+    use crate::ac3::ConstraintProvider;
 
     use super::{Coordinate, Direction, TileSet};
 
