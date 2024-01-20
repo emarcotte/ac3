@@ -52,6 +52,7 @@ pub trait DomainProvider<V, D>: Clone {
     fn is_consistent(&self) -> bool;
 }
 
+/// Simple impl for a hashmap domain provider.
 impl<K, D, S1> DomainProvider<K, D> for HashMap<K, Vec<D>, S1>
 where
     K: Eq + PartialEq + Hash + Copy + Ord,
@@ -82,6 +83,35 @@ where
     }
 }
 
+/// Simple impl for a hashmap domain provider.
+impl<D> DomainProvider<usize, D> for Vec<Vec<D>>
+where
+    D: Clone,
+{
+    fn get_domain(&self, var: &usize) -> Option<&Vec<D>> {
+        self.get(*var)
+    }
+
+    fn take_domain(&mut self, var: &usize) -> Option<Vec<D>> {
+        self(a, b)
+        self.remove(var)
+    }
+
+    fn update_domain(&mut self, var: &usize, d: Vec<D>) {
+        self[var] = Some(d);
+    }
+
+    fn next_reducable_variable(&mut self) -> Option<usize> {
+        self.iter_mut()
+            .filter(|(_, v)| v.len() > 1)
+            .min_by(|(a, a_v), (b, b_v)| a_v.len().cmp(&b_v.len()).then(a.cmp(b)))
+            .map(|min| *min.0)
+    }
+
+    fn is_consistent(&self) -> bool {
+        !self.iter().any(|(_, tiles)| tiles.is_empty())
+    }
+}
 /// Removes invalid domain values from a given variable `x`, by verifying
 /// constraints in relation to `y`.
 fn revise<V, D, DP, CP>(domains: &mut DP, constraints: &CP, x: V, y: V) -> bool
