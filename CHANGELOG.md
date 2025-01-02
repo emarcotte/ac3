@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/emarcotte/ac3/compare/ac3-v0.1.0...ac3-v0.2.0) (2025-01-02)
+
+
+### Features
+
+* readme tweak ([#43](https://github.com/emarcotte/ac3/issues/43)) ([602e7de](https://github.com/emarcotte/ac3/commit/602e7def5b197cd7f8430ecd51c1ba4a8a8ba699))
+
 ## 0.1.0 (2025-01-02)
 
 
