@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use csp::{
+use ac3::{
     ac3::{ConstraintProvider, DomainType, IdentifierType},
     backtrack,
     variable_provider::{Variable, VariableID, VariableProvider},
