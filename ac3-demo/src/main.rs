@@ -738,4 +738,55 @@ mod test {
         assert_eq!(Direction::Left.reverse(), Direction::Right);
         assert_eq!(Direction::Right.reverse(), Direction::Left);
     }
+
+    #[test]
+    fn coordinate_display() {
+        assert_eq!(format!("{}", Coordinate::new(0, 3)), "(0, 3)".to_string());
+    }
+
+    #[test]
+    fn partial_cmp_coordinate() {
+        assert_eq!(
+            Coordinate::new(0, 1).partial_cmp(&Coordinate::new(1, 0)),
+            Some(Ordering::Less)
+        );
+    }
+
+    #[test]
+    fn display_tile() {
+        assert_eq!("▓".to_string(), format!("{}", Tile::Inside));
+    }
+
+    #[test]
+    fn ch_tile() {
+        for t in &[
+            Tile::Outside,
+            Tile::TLCorner,
+            Tile::HWall,
+            Tile::TRCorner,
+            Tile::VWall,
+            Tile::Inside,
+            Tile::BLCorner,
+            Tile::BRCorner,
+        ] {
+            // TODO: Bad test.
+            t.ch();
+        }
+    }
+
+    #[test]
+    fn build_arcs() {
+        let mut vars = VariableProvider::<Tile, Coordinate>::default();
+        let x_lim = 3;
+        let y_lim = 2;
+
+        for x in 0..x_lim {
+            for y in 0..y_lim {
+                vars.add_var(Coordinate::new(x, y), vec![]).unwrap();
+            }
+        }
+
+        let arcs = super::build_arcs(&vars, x_lim, y_lim);
+        assert_eq!(arcs.len(), 14);
+    }
 }
