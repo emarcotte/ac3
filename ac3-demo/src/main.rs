@@ -85,7 +85,7 @@ impl Coordinate {
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
-enum Tile {
+pub(crate) enum Tile {
     Inside,
     Outside,
     VWall,
@@ -331,80 +331,6 @@ impl ConstraintProvider<Tile, Coordinate> for TileSet {
         } else {
             false
         }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use std::cmp::Ordering;
-
-    use csp::ac3::ConstraintProvider;
-
-    use super::{Coordinate, Direction, TileSet};
-
-    #[test]
-    fn cmp_coordinates() {
-        assert_eq!(
-            Ordering::Less,
-            Coordinate::new(1, 1).cmp(&Coordinate::new(2, 2))
-        );
-    }
-
-    #[test]
-    fn coordinate_is_adjacent() {
-        let c0_0 = Coordinate::new(0, 0);
-        let c1_1 = Coordinate::new(1, 1);
-        let c0_1 = Coordinate::new(0, 1);
-        assert_eq!(c0_0.is_adjacent(&c1_1), None);
-        assert_eq!(c0_0.is_adjacent(&c0_1), Some(Direction::Up));
-        assert_eq!(c0_1.is_adjacent(&c0_0), Some(Direction::Down));
-        assert_eq!(c0_1.is_adjacent(&c1_1), Some(Direction::Right));
-        assert_eq!(c1_1.is_adjacent(&c0_1), Some(Direction::Left));
-    }
-
-    #[test]
-    fn new_tileset() {
-        let t = TileSet::default();
-        assert_eq!(t.tiles.len(), 10);
-    }
-
-    #[test]
-    fn check_ignores_unrelated_coordinates() {
-        let t = TileSet::default();
-        assert_eq!(t.tiles.len(), 10);
-        assert!(!t.check(Coordinate::new(0, 0), &0, Coordinate::new(2, 0), &0));
-    }
-
-    #[test]
-    fn check_related() {
-        let t = TileSet::default();
-        assert_eq!(t.tiles.len(), 10);
-        assert!(t.check(
-            Coordinate::new(0, 0),
-            &t.tiles[0],
-            Coordinate::new(1, 0),
-            &t.tiles[0]
-        ));
-    }
-
-    #[test]
-    fn check_for_non_related() {
-        let t = TileSet::default();
-        assert_eq!(t.tiles.len(), 10);
-        assert!(!t.check(
-            Coordinate::new(0, 0),
-            &t.tiles[0],
-            Coordinate::new(1, 0),
-            &t.tiles[5]
-        ));
-    }
-
-    #[test]
-    fn direction_reverse() {
-        assert_eq!(Direction::Up.reverse(), Direction::Down);
-        assert_eq!(Direction::Down.reverse(), Direction::Up);
-        assert_eq!(Direction::Left.reverse(), Direction::Right);
-        assert_eq!(Direction::Right.reverse(), Direction::Left);
     }
 }
 
@@ -699,7 +625,6 @@ fn main() {
 }
 
 fn print_domains(variables: &VariableProvider<Tile, Coordinate>, y_lim: usize, x_lim: usize) {
-    // if variables.iter().all(|(_, tiles)| tiles.len() == 1) {
     println!("Solution:");
     for y in (0..y_lim).rev() {
         print!("{y:>3} ");
@@ -713,9 +638,6 @@ fn print_domains(variables: &VariableProvider<Tile, Coordinate>, y_lim: usize, x
         }
         println!();
     }
-    // } else {
-    //    println!("Sad face");
-    // }
 }
 
 fn simple_rng(seed_str: &str) -> SmallRng {
@@ -723,5 +645,148 @@ fn simple_rng(seed_str: &str) -> SmallRng {
         SmallRng::from_entropy()
     } else {
         Seeder::from(&seed_str).make_rng()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::cmp::Ordering;
+
+    use ac3::{ac3::ConstraintProvider, variable_provider::VariableProvider};
+
+    use crate::Tile;
+
+    use super::{Coordinate, Direction, TileSet};
+
+    #[test]
+    fn cmp_coordinates() {
+        assert_eq!(
+            Ordering::Less,
+            Coordinate::new(1, 1).cmp(&Coordinate::new(2, 2))
+        );
+    }
+
+    #[test]
+    fn coordinate_is_adjacent() {
+        let c0_0 = Coordinate::new(0, 0);
+        let c1_1 = Coordinate::new(1, 1);
+        let c0_1 = Coordinate::new(0, 1);
+        assert_eq!(c0_0.is_adjacent(&c1_1), None);
+        assert_eq!(c0_0.is_adjacent(&c0_1), Some(Direction::Up));
+        assert_eq!(c0_1.is_adjacent(&c0_0), Some(Direction::Down));
+        assert_eq!(c0_1.is_adjacent(&c1_1), Some(Direction::Right));
+        assert_eq!(c1_1.is_adjacent(&c0_1), Some(Direction::Left));
+    }
+
+    #[test]
+    fn new_tileset() {
+        let t = TileSet::default();
+        // TODO: Bad test.
+        assert!(t.relations.len() > 4);
+    }
+
+    #[test]
+    fn check_ignores_unrelated_coordinates() {
+        let t = TileSet::default();
+        let mut vars = VariableProvider::<Tile, Coordinate>::default();
+        let a = vars.add_var(Coordinate::new(0, 0), vec![]).unwrap();
+        let b = vars.add_var(Coordinate::new(2, 0), vec![]).unwrap();
+        assert!(!t.check(
+            vars.get_var(a).unwrap(),
+            &Tile::Inside,
+            vars.get_var(b).unwrap(),
+            &Tile::Inside
+        ));
+    }
+
+    #[test]
+    fn check_related() {
+        let t = TileSet::default();
+        let mut vars = VariableProvider::<Tile, Coordinate>::default();
+        let a = vars
+            .add_var(Coordinate::new(0, 0), vec![Tile::VWall, Tile::Outside])
+            .unwrap();
+        let b = vars
+            .add_var(Coordinate::new(1, 0), vec![Tile::VWall, Tile::Outside])
+            .unwrap();
+        assert!(t.check(
+            vars.get_var(a).unwrap(),
+            &Tile::Outside,
+            vars.get_var(b).unwrap(),
+            &Tile::Outside
+        ));
+    }
+
+    #[test]
+    fn check_for_non_related() {
+        let t = TileSet::default();
+        let mut vars = VariableProvider::<Tile, Coordinate>::default();
+        let a = vars.add_var(Coordinate::new(0, 0), vec![]).unwrap();
+        let b = vars.add_var(Coordinate::new(1, 0), vec![]).unwrap();
+        assert!(!t.check(
+            vars.get_var(a).unwrap(),
+            &Tile::Outside,
+            vars.get_var(b).unwrap(),
+            &Tile::Inside
+        ));
+    }
+
+    #[test]
+    fn direction_reverse() {
+        assert_eq!(Direction::Up.reverse(), Direction::Down);
+        assert_eq!(Direction::Down.reverse(), Direction::Up);
+        assert_eq!(Direction::Left.reverse(), Direction::Right);
+        assert_eq!(Direction::Right.reverse(), Direction::Left);
+    }
+
+    #[test]
+    fn coordinate_display() {
+        assert_eq!(format!("{}", Coordinate::new(0, 3)), "(0, 3)".to_string());
+    }
+
+    #[test]
+    fn partial_cmp_coordinate() {
+        assert_eq!(
+            Coordinate::new(0, 1).partial_cmp(&Coordinate::new(1, 0)),
+            Some(Ordering::Less)
+        );
+    }
+
+    #[test]
+    fn display_tile() {
+        assert_eq!("▓".to_string(), format!("{}", Tile::Inside));
+    }
+
+    #[test]
+    fn ch_tile() {
+        for t in &[
+            Tile::Outside,
+            Tile::TLCorner,
+            Tile::HWall,
+            Tile::TRCorner,
+            Tile::VWall,
+            Tile::Inside,
+            Tile::BLCorner,
+            Tile::BRCorner,
+        ] {
+            // TODO: Bad test.
+            t.ch();
+        }
+    }
+
+    #[test]
+    fn build_arcs() {
+        let mut vars = VariableProvider::<Tile, Coordinate>::default();
+        let x_lim = 3;
+        let y_lim = 2;
+
+        for x in 0..x_lim {
+            for y in 0..y_lim {
+                vars.add_var(Coordinate::new(x, y), vec![]).unwrap();
+            }
+        }
+
+        let arcs = super::build_arcs(&vars, x_lim, y_lim);
+        assert_eq!(arcs.len(), 14);
     }
 }
