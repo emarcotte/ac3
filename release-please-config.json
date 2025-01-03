@@ -1,7 +1,15 @@
 {
   "packages": {
-    ".": {
+    "ac3": {
       "package-name": "ac3",
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "rust",
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": false,
+      "prerelease": false
+    },
+    "ac3-demo": {
+      "package-name": "ac3-demo",
       "changelog-path": "CHANGELOG.md",
       "release-type": "rust",
       "bump-minor-pre-major": false,
