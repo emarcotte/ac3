@@ -1,7 +1,7 @@
 use rand::Rng;
 
 use crate::ac3::{DomainType, IdentifierType};
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use std::{
     cell::{Ref, RefCell, RefMut},
     collections::HashMap,
@@ -156,11 +156,7 @@ where
             .iter()
             .filter_map(|v| {
                 let len = v.possible_values().len();
-                if len > 1 {
-                    Some((len, v))
-                } else {
-                    None
-                }
+                if len > 1 { Some((len, v)) } else { None }
             })
             .min_by(|(a_len, a), (b_len, b)| a_len.cmp(b_len).then(a.identifier.cmp(&b.identifier)))
             .map(|(_, min)| min.index)
