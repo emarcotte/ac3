@@ -1,7 +1,7 @@
 use crate::ac3::{ConstraintProvider, DomainType, IdentifierType};
 use crate::variable_provider::{VariableID, VariableProvider};
 use rand::rngs::SmallRng;
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 
 /// Tracking state for the search algorithm to undo itself.
 #[derive(Debug)]
@@ -109,7 +109,7 @@ mod test {
     use super::reduce;
 
     fn simple_rng(seed_str: &str) -> SmallRng {
-        Seeder::from(seed_str).make_rng()
+        Seeder::from(seed_str).into_rng()
     }
 
     struct TestCase {

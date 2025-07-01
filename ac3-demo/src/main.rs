@@ -642,9 +642,9 @@ fn print_domains(variables: &VariableProvider<Tile, Coordinate>, y_lim: usize, x
 
 fn simple_rng(seed_str: &str) -> SmallRng {
     if seed_str.is_empty() {
-        SmallRng::from_entropy()
+        SmallRng::from_os_rng()
     } else {
-        Seeder::from(&seed_str).make_rng()
+        Seeder::from(&seed_str).into_rng()
     }
 }
 
