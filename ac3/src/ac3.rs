@@ -144,16 +144,20 @@ mod test {
         let constraints = HashMap::from([((a, b), new_constraint(|a, _| *a < 3))]);
 
         assert!(revise(&variables, &constraints, a, b));
-        assert!(variables
-            .get_var(a)
-            .unwrap()
-            .possible_values()
-            .eq(&vec!(1, 2)));
-        assert!(variables
-            .get_var(b)
-            .unwrap()
-            .possible_values()
-            .eq(&vec!(2, 3)));
+        assert!(
+            variables
+                .get_var(a)
+                .unwrap()
+                .possible_values()
+                .eq(&vec!(1, 2))
+        );
+        assert!(
+            variables
+                .get_var(b)
+                .unwrap()
+                .possible_values()
+                .eq(&vec!(2, 3))
+        );
     }
 
     #[test]
@@ -166,16 +170,20 @@ mod test {
         let constraints = HashMap::from([((a, b), new_constraint(|a, _| *a < 5))]);
 
         assert!(!revise(&variables, &constraints, a, b));
-        assert!(variables
-            .get_var(a)
-            .unwrap()
-            .possible_values()
-            .eq(&vec!(1, 2, 3)));
-        assert!(variables
-            .get_var(b)
-            .unwrap()
-            .possible_values()
-            .eq(&vec!(2, 3)));
+        assert!(
+            variables
+                .get_var(a)
+                .unwrap()
+                .possible_values()
+                .eq(&vec!(1, 2, 3))
+        );
+        assert!(
+            variables
+                .get_var(b)
+                .unwrap()
+                .possible_values()
+                .eq(&vec!(2, 3))
+        );
     }
 
     #[test]
@@ -187,16 +195,20 @@ mod test {
         let b = variables.find_id('b').unwrap();
 
         assert!(!revise(&variables, &constraints, a, b));
-        assert!(variables
-            .get_var(a)
-            .unwrap()
-            .possible_values()
-            .eq(&vec!(1, 2, 3)));
-        assert!(variables
-            .get_var(b)
-            .unwrap()
-            .possible_values()
-            .eq(&vec!(2, 3)));
+        assert!(
+            variables
+                .get_var(a)
+                .unwrap()
+                .possible_values()
+                .eq(&vec!(1, 2, 3))
+        );
+        assert!(
+            variables
+                .get_var(b)
+                .unwrap()
+                .possible_values()
+                .eq(&vec!(2, 3))
+        );
     }
 
     #[test]
