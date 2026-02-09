@@ -5,7 +5,7 @@ use ac3::{
     backtrack,
     variable_provider::{Variable, VariableID, VariableProvider},
 };
-use rand::prelude::{SeedableRng, SmallRng};
+use rand::prelude::SmallRng;
 use rand_seeder::Seeder;
 
 /// Direction tracks relationships between tiles.
@@ -642,7 +642,7 @@ fn print_domains(variables: &VariableProvider<Tile, Coordinate>, y_lim: usize, x
 
 fn simple_rng(seed_str: &str) -> SmallRng {
     if seed_str.is_empty() {
-        SmallRng::from_os_rng()
+        rand::make_rng()
     } else {
         Seeder::from(&seed_str).into_rng()
     }
