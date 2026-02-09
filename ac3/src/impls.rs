@@ -37,6 +37,6 @@ where
     fn check(&self, a: &Variable<D, K>, av: &D, b: &Variable<D, K>, bv: &D) -> bool {
         // TODO: Default is to be unconstrained, i guess.
         self.get(&(a.index, b.index))
-            .map_or(true, |checker: &Constraint<D>| checker(av, bv))
+            .is_none_or(|checker: &Constraint<D>| checker(av, bv))
     }
 }

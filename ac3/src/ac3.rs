@@ -72,12 +72,11 @@ where
 {
     let mut revised = false;
 
-    if let Some(x_var) = variables.get_var(x) {
-        if let Some(y_var) = variables.get_var(y) {
-            if retain(x_var, y_var, constraints) {
-                revised = true;
-            }
-        }
+    if let Some(x_var) = variables.get_var(x)
+        && let Some(y_var) = variables.get_var(y)
+        && retain(x_var, y_var, constraints)
+    {
+        revised = true;
     }
 
     revised

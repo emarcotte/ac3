@@ -41,11 +41,11 @@ where
         return !self.possible_values().is_empty();
     }
 
-    pub fn possible_values(&self) -> Ref<Vec<D>> {
+    pub fn possible_values(&self) -> Ref<'_, Vec<D>> {
         self.domain.borrow()
     }
 
-    pub fn possible_values_mut(&self) -> RefMut<Vec<D>> {
+    pub fn possible_values_mut(&self) -> RefMut<'_, Vec<D>> {
         self.domain.borrow_mut()
     }
 
